@@ -1,0 +1,31 @@
+services:
+  app:
+    container_name: ${PROJECT_NAME}-app
+    env_file: .env
+    build:
+      context: .
+      target: dev
+      dockerfile: ./docker/app/Dockerfile
+      args:
+        - target=dev
+    volumes:
+      - ./:/go/src/github.com/suzushin54/event-sourcing-with-go
+    command: air -c .air.toml
+    ports:
+      - "8080:8080"
+      - "2345:2345"
+    links:
+      - "mysql:mysql"
+  mysql:
+    image: mysql:8.0.30
+    container_name: ${PROJECT_NAME}-db
+    env_file: .env
+    restart: always
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+      - ./docker/mysql/logs:/var/log/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/mysql/authentication.cnf:/etc/mysql/conf.d/authentication.cnf
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    ports:
+      - 23306:3306
