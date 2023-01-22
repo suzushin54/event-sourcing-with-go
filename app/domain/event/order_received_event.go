@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const DomainEventNameOrderReceived = "OrderReceivedEvent"
+const DomainEventNameOrderReceived = "OrderReceived"
 
 // OrderReceivedEvent - 店舗注文確認イベント
 type OrderReceivedEvent struct {
@@ -30,4 +30,11 @@ func (o OrderReceivedEvent) Serialize() (string, error) {
 		return "", err
 	}
 	return string(bytes), nil
+}
+
+func (o OrderReceivedEvent) Deserialize(data string) error {
+	if err := json.Unmarshal([]byte(data), &o); err != nil {
+		return err
+	}
+	return nil
 }

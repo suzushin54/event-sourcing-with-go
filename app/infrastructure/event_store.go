@@ -8,7 +8,7 @@ import (
 )
 
 type EventStore interface {
-	Fetch(ctx context.Context, id uint64) ([]*event.DomainEvent, error)
+	Fetch(ctx context.Context, id uint64) ([]event.DomainEvent, error)
 	Append(ctx context.Context, id uint64, newEvents []*event.DomainEvent, expectedVersion uint64) error
 }
 
@@ -20,7 +20,7 @@ func NewMySqlEventStore(conn *sqlx.DB) EventStore {
 	return &MySqlEventStore{conn: conn}
 }
 
-func (m MySqlEventStore) Fetch(ctx context.Context, id uint64) ([]*event.DomainEvent, error) {
+func (m MySqlEventStore) Fetch(ctx context.Context, id uint64) ([]event.DomainEvent, error) {
 	type OrderEventDao struct {
 		OrderID   int    `db:"order_id"`
 		Version   int    `db:"version"`
@@ -28,7 +28,7 @@ func (m MySqlEventStore) Fetch(ctx context.Context, id uint64) ([]*event.DomainE
 		EventData string `db:"event_data"`
 	}
 	var events []*OrderEventDao
-	q := `SELECT order_id, version, event_type, event_data FROM order_events WHERE order_id = ? ORDER BY version`
+	q := `SELECT order_id, version, event_type, event_data FROM order_events WHERE order_id = ? ORDER BY version asc`
 
 	err := sqlx.SelectContext(ctx, m.conn, &events, q, id)
 	if err != nil {
@@ -38,9 +38,38 @@ func (m MySqlEventStore) Fetch(ctx context.Context, id uint64) ([]*event.DomainE
 		return nil, fmt.Errorf("failed to get order events. order_id: %d", id)
 	}
 
-	// TODO: 変換して返す
-	//       DomainEventのスライスに渡せる？
-	return nil, nil
+	// TODO: 順序保証
+
+	var domainEvents []event.DomainEvent
+	for _, v := range events {
+		switch v.EventType {
+		case "OrderCreated":
+			var e event.OrderCreatedEvent
+			if err := e.Deserialize(v.EventData); err != nil {
+				return nil, fmt.Errorf("failed to deserialize: %w", err)
+			}
+			domainEvents = append(domainEvents, e)
+		case "OrderReceived":
+			var e event.OrderReceivedEvent
+			if err := e.Deserialize(v.EventData); err != nil {
+				return nil, fmt.Errorf("failed to deserialize: %w", err)
+			}
+			domainEvents = append(domainEvents, e)
+		case "OrderCanceled":
+			var e event.OrderCancelledEvent
+			if err := e.Deserialize(v.EventData); err != nil {
+				return nil, fmt.Errorf("failed to deserialize: %w", err)
+			}
+			domainEvents = append(domainEvents, e)
+		case "PickupTimeChanged":
+			var e event.PickupTimeChangedEvent
+			if err := e.Deserialize(v.EventData); err != nil {
+				return nil, fmt.Errorf("failed to deserialize: %w", err)
+			}
+			domainEvents = append(domainEvents, e)
+		}
+	}
+	return domainEvents, nil
 }
 
 func (m MySqlEventStore) Append(ctx context.Context, id uint64, newEvents []*event.DomainEvent, expectedVersion uint64) error {

@@ -19,18 +19,18 @@ func NewOrderRepositoryV2(eventStore infrastructure.EventStore) repository.Order
 	}
 }
 
+// Find - Find an order by ID
+// NOTE: 集約の復元を隠蔽したい場合
 func (o *OrderRepositoryV2) Find(ctx context.Context, id uint64) (*aggregate.Order, error) {
-	// NOTE: 集約の復元を隠蔽したい場合はFindになると思われる
-	// TODO: fetch未実装
 	events, err := o.eventStore.Fetch(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	order := aggregate.NewOrder(events)
+	order := aggregate.RestoreOrder(events)
 	return order, nil
 }
 
-func (o *OrderRepositoryV2) LoadEvents(ctx context.Context, id uint64) ([]*event.DomainEvent, error) {
+func (o *OrderRepositoryV2) LoadEvents(ctx context.Context, id uint64) ([]event.DomainEvent, error) {
 	events, err := o.eventStore.Fetch(ctx, id)
 	if err != nil {
 		return nil, err

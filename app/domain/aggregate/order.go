@@ -43,6 +43,15 @@ func NewOrder(events []*event.DomainEvent) *Order {
 	return o
 }
 
+// RestoreOrder - 注文集約を再構築する
+func RestoreOrder(events []event.DomainEvent) *Order {
+	var o = &Order{}
+	for _, e := range events {
+		o.appendEvent(e)
+	}
+	return o
+}
+
 // appendEvent - イベントを受け取り、注文集約の状態を更新する
 func (o *Order) appendEvent(e event.DomainEvent) {
 	o.DomainEvents = append(o.DomainEvents, &e)

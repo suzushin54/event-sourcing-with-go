@@ -8,7 +8,7 @@ import (
 
 type OrderRepositoryV2 interface {
 	Find(ctx context.Context, id uint64) (*aggregate.Order, error)
-	LoadEvents(ctx context.Context, id uint64) ([]*event.DomainEvent, error)
+	LoadEvents(ctx context.Context, id uint64) ([]event.DomainEvent, error)
 	Commit(ctx context.Context, order *aggregate.Order) error
 	CommitChanges(ctx context.Context, order *aggregate.Order, originalVersion uint32) error
 }

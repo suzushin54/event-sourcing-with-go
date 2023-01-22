@@ -31,3 +31,10 @@ func (o OrderCreatedEvent) Serialize() (string, error) {
 	}
 	return string(bytes), nil
 }
+
+func (o OrderCreatedEvent) Deserialize(data string) error {
+	if err := json.Unmarshal([]byte(data), &o); err != nil {
+		return err
+	}
+	return nil
+}
