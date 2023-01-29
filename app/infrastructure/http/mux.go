@@ -39,6 +39,7 @@ func NewMux(oc *controller.OrderController) http.Handler {
 	r.HandleFunc("/v2/orders/{order_id:[0-9]+}/modify", oc.ModifyOrderV2()).Methods("PUT")
 
 	// 確認用
+	r.HandleFunc("/v2/orders/{order_id:[0-9]+}", oc.FindOrderV2()).Methods("GET")
 
 	// 注文詳細
 	r.HandleFunc("/v1/orders/{order_id:[0-9]+}", oc.FindOrderV1()).Methods("GET")
